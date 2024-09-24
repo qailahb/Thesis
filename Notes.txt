@@ -1,0 +1,29 @@
+- Timing and demostrator system
+- gain some insight into the challenges of
+particle accelerators, aspects of their control and their timing and sensing
+synchronization
+- try and get the particles moving or adjusting their speed
+by controlling the magnets
+- being able to characterise the particles
+that have been put in the accelerator
+- cycling accelerator
+- enclosed track, nothing flying out
+- even slight acceleration is fine
+
+- track is plastic/PVC/perspex (transparent)
+- ball bearings, encased in pjastic and plasticine (impact friction)
+- detectors triggered when balls pass sensors
+- sensor = laser LED and LDR
+- magnets (2 or more)
+- launch mechanism
+
+- figure out timing of when object is detected by sensors and right time 
+to activate magnets to increase speed
+
+- STM (python/C)
+- GPIO and veriboard/breadboard circuits to control FETS controlling
+magnets/ when ball crosses laser detector
+- connect to PC for config parameters and logging data
+- times at which magnets are turned on/off and when Obs pass a
+detection sensor and their speeds, and calculated acceleration 
+or deacceleration
