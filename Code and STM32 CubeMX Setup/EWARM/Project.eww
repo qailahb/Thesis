@@ -1,0 +1,80 @@
+#include "stm32f0xx.h"
+
+#define DISTANCE_BETWEEN_SENSORS 1.0  // Distance in meters between the two sensors
+
+volatile uint32_t time_first_sensor = 0;
+volatile uint32_t time_second_sensor = 0;
+volatile float velocity = 0.0;
+
+void setup_uart(void) {
+    RCC->APB2ENR |= RCC_APB2ENR_USART1EN;  // Enable USART1 clock
+    GPIOA->MODER |= (GPIO_MODER_MODER9_1 | GPIO_MODER_MODER10_1);  // PA9 as USART1_TX, PA10 as USART1_RX
+    GPIOA->AFR[1] |= 0x110;  // Set pins to AF1 for USART1
+
+    USART1->BRR = 48000000 / 9600;  // Set baud rate
+    USART1->CR1 |= USART_CR1_TE | USART_CR1_RE | USART_CR1_UE;  // Enable USART, transmitter and receiver
+}
+
+void uart_send_char(char c) {
+    while (!(USART1->ISR & USART_ISR_TXE));  // Wait until transmit data register is empty
+    USART1->TDR = c;  // Send character
+}
+
+void uart_send_string(const char* str) {
+    while (*str) {
+        uart_send_char(*str++);
+    }
+}
+
+void setup_gpio_and_interrupts(void) {
+    RCC->AHBENR |= RCC_AHBENR_GPIOAEN;  // Enable GPIO clock
+    RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;  // Enable TIM3 clock for timing and events
+
+    // Set PA09 and PA10 as outputs for electromagnets
+    GPIOA->MODER |= (GPIO_MODER_MODER9_0 | GPIO_MODER_MODER10_0);
+    GPIOA->OTYPER &= ~(GPIO_OTYPER_OT_9 | GPIO_OTYPER_OT_10);
+    GPIOA->OSPEEDR |= (GPIO_OSPEEDR_OSPEEDR9 | GPIO_OSPEEDR_OSPEEDR10);
+    GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPDR9 | GPIO_PUPDR_PUPDR10);
+
+    // Additional EXTI configurations needed here
+}
+
+void setup_timers(void) {
+    TIM3->PSC = 48000 - 1;  // Prescale to 1ms assuming 48MHz clock
+    TIM3->ARR = 0xFFFFFFFF;  // Set auto-reload to max for continuous timing
+    TIM3->CR1 |= TIM_CR1_CEN;  // Start TIM3
+}
+
+void EXTI0_1_IRQHandler(void) {
+    if (EXTI->PR & EXTI_PR_PR7) {  // Check if the interrupt is from PA07
+        EXTI->PR |= EXTI_PR_PR7;  // Clear the interrupt
+        time_first_sensor = TIM3->CNT;  // Record the time of this event
+        uart_send_string("Time first sensor detected: ");
+        uart_send_string(time_first_sensor);
+        uart_send_string("\n");
+    }
+}
+
+void EXTI4_15_IRQHandler(void) {
+    if (EXTI->PR & EXTI_PR_PR11) {  // Check if the interrupt is from PA11
+        EXTI->PR |= EXTI_PR_PR11;  // Clear the interrupt
+        time_second_sensor = TIM3->CNT;  // Record the time of this event
+        uint32_t time_difference = time_second_sensor - time_first_sensor;
+        velocity = DISTANCE_BETWEEN_SENSORS / (time_difference / 1000.0);  // Convert time to seconds, calculate velocity
+        uart_send_string("Time second sensor detected: ");
+        uart_send_string(time_second_sensor);
+        uart_send_string("\nVelocity: ");
+        uart_send_string(velocity);
+        uart_send_string(" m/s\n");
+    }
+}
+
+int main(void) {
+    setup_uart();
+    setup_gpio_and_interrupts();
+    setup_timers();
+
+    while (1) {
+        // Main loop can remain empty if all control is interrupt-based
+    }
+}
