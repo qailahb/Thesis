@@ -1,1 +1,1 @@
-
+This repository contains the source files for the Tiny Big Magnetic Particle Accelerator (TBMPA), an experimental demonstrator designed to explore the challenges associated with particle accelerators, specifically focusing on aspects of control, timing, and sensing synchronisation. The TBMPA aims to accelerate ball bearings through a closed-loop system using magnetic fields, providing insights into the control mechanisms needed for larger-scale particle accelerators.
